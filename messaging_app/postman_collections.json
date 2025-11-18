@@ -1,0 +1,263 @@
+{
+	"info": {
+		"_postman_id": "a8a0c4c8-3c8e-4a6d-8f8f-2c1c1c1c1c1c",
+		"name": "Messaging App",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Register User",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"testpassword\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/users/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"users",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login and get JWT Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = JSON.parse(responseBody);",
+							"postman.setEnvironmentVariable(\"jwt_token\", jsonData.access);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"testuser\",\n    \"password\": \"testpassword\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/token/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"token",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Conversation",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"participants\": [1, 2]\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/conversations/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"conversations",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Send Message",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"conversation\": 1,\n    \"sender\": 1,\n    \"content\": \"Hello, world!\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/messages/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"messages",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch Conversations",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/conversations/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"conversations",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Fetch Messages",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/messages/?conversation=1",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"messages",
+						""
+					],
+					"query": [
+						{
+							"key": "conversation",
+							"value": "1"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Unauthorized Access",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/conversations/1/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"conversations",
+						"1",
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://127.0.0.1:8000"
+		}
+	]
+}
