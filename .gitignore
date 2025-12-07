@@ -4,3 +4,4 @@ __pycache__
 venv_messaging/
 python-decorators-0x01/users.db
 requests.log
+messaging_app/.env
