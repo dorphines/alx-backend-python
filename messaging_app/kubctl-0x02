@@ -1,0 +1,26 @@
+#!/bin/bash
+
+echo "Applying blue-green deployments and service..."
+
+# Apply the service
+kubectl apply -f kubeservice.yaml
+
+# Apply the blue deployment
+kubectl apply -f blue_deployment.yaml
+
+# Apply the green deployment
+kubectl apply -f green_deployment.yaml
+
+echo "Waiting for green deployment to be available..."
+kubectl rollout status deployment/django-messaging-app-green
+
+echo "Checking logs for the green deployment..."
+GREEN_PODS=$(kubectl get pods -l app=django-messaging-app,version=green -o jsonpath='{.items[*].metadata.name}')
+
+for pod in $GREEN_PODS; do
+    echo "Logs for pod: $pod"
+    kubectl logs $pod
+done
+
+echo "Blue-green setup is complete. Traffic is currently on 'blue'."
+echo "To switch traffic to 'green', update the selector in kubeservice.yaml to 'version: green' and run 'kubectl apply -f kubeservice.yaml'"

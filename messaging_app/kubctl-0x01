@@ -1,0 +1,18 @@
+#!/bin/bash
+
+echo "Scaling Django app deployment to 3 replicas..."
+kubectl scale deployment/django-messaging-app --replicas=3
+
+echo "Verifying multiple pods are running..."
+kubectl get pods
+
+echo "Getting the URL for the django-messaging-service..."
+SERVICE_URL=$(minikube service django-messaging-service --url)
+echo "Service URL: $SERVICE_URL"
+
+# Perform load testing using wrk (assuming wrk is installed)
+echo "Performing load testing with wrk..."
+wrk -t4 -c10 -d30s "$SERVICE_URL"
+
+echo "Monitoring resource usage with kubectl top..."
+kubectl top pods
