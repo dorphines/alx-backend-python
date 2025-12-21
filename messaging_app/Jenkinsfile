@@ -32,8 +32,10 @@ pipeline {
             steps {
                 sh '''
                 . venv/bin/activate
+                mkdir -p reports
+                cd messaging_app
                 export DJANGO_SETTINGS_MODULE=messaging_app.settings
-                pytest messaging_app/ --junitxml=reports/test-results.xml
+                pytest . --junitxml=../reports/test-results.xml
                 '''
             }
         }
