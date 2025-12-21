@@ -3,7 +3,26 @@ from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST, require_GET
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth import authenticate, login
+import json
 from .models import Message
+
+@csrf_exempt
+@require_POST
+def login_view(request):
+    try:
+        data = json.loads(request.body)
+        username = data.get('username')
+        password = data.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return JsonResponse({'status': 'success', 'message': 'Logged in successfully', 'user_id': user.id})
+        else:
+            return JsonResponse({'status': 'error', 'message': 'Invalid credentials'}, status=400)
+    except json.JSONDecodeError:
+        return JsonResponse({'status': 'error', 'message': 'Invalid JSON'}, status=400)
 
 @login_required
 @require_POST
@@ -21,6 +40,7 @@ def serialize_thread(message):
         'sender': message.sender.username,
         'content': message.content,
         'timestamp': message.timestamp,
+        'edited': message.edited,
         'replies': [serialize_thread(reply) for reply in message.replies.all()]
     }
 
@@ -36,10 +56,6 @@ def message_thread(request, message_id):
         # For very deep threads, other strategies might be needed.
         message = Message.objects.select_related('sender').prefetch_related('replies').get(id=message_id)
 
-        # To build the full thread, you might need to handle deeper nesting if your prefetch isn't set up for it.
-        # A common approach is to prefetch all descendants and build the tree in Python.
-        # However, for this example, we'll rely on the recursive serialization in python.
-        
         thread_data = serialize_thread(message)
         return JsonResponse(thread_data)
 
@@ -48,6 +64,7 @@ def message_thread(request, message_id):
 
 from django.views.decorators.cache import cache_page
 from django.db.models import Q
+from .models import Message, MessageHistory
 
 @login_required
 @require_GET
@@ -69,7 +86,8 @@ def message_list(request, user_id):
         'id': msg.id,
         'sender': msg.sender.username,
         'content': msg.content,
-        'timestamp': msg.timestamp
+        'timestamp': msg.timestamp,
+        'edited': msg.edited
     } for msg in messages]
 
     return JsonResponse(data, safe=False)
@@ -87,7 +105,24 @@ def unread_messages(request):
         'id': msg.id,
         'sender': msg.sender.username,
         'content': msg.content,
-        'timestamp': msg.timestamp
+        'timestamp': msg.timestamp,
+        'edited': msg.edited
     } for msg in messages]
 
+    return JsonResponse(data, safe=False)
+
+@login_required
+@require_GET
+def message_history(request, message_id):
+    """
+    Retrieve the edit history of a message.
+    """
+    message = get_object_or_404(Message, id=message_id)
+    history = message.messagehistory_set.all().order_by('-timestamp')
+    
+    data = [{
+        'old_content': h.old_content,
+        'timestamp': h.timestamp
+    } for h in history]
+    
     return JsonResponse(data, safe=False)

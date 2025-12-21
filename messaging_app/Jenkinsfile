@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+
+    environment {
+        // Use the ID you created in Step 4
+        GITHUB_CREDS = credentials('github-credentials')
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Adjust the URL to your specific repo
+                git branch: 'main', 
+                    credentialsId: 'github-credentials', 
+                    url: 'https://github.com/dorphines/alx-backend-python.git'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh '''
+                python3 -m venv venv
+                . venv/bin/activate
+                pip install --upgrade pip
+                pip install -r messaging_app/requirements.txt
+                pip install pytest pytest-django
+                '''
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh '''
+                . venv/bin/activate
+                export DJANGO_SETTINGS_MODULE=messaging_app.settings
+                pytest messaging_app/ --junitxml=reports/test-results.xml
+                '''
+            }
+        }
+    }
+
+    post {
+        always {
+            // Generates the test report in the Jenkins UI
+            junit 'reports/test-results.xml'
+        }
+    }
+}
