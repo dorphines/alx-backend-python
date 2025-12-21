@@ -42,12 +42,13 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            steps {
-                // --no-cache and --pull force a clean, fresh build
-                sh "docker build --no-cache --pull -t ${DOCKER_IMAGE}:${env.BUILD_ID} ./messaging_app"
-                sh "docker tag ${DOCKER_IMAGE}:${env.BUILD_ID} ${DOCKER_IMAGE}:latest"
-            }
-        }
+    steps {
+        // We use buildx with --provenance=false to avoid the 400 Bad Request error
+        // If your environment doesn't have buildx, use DOCKER_BUILDKIT=0 as an env var instead.
+        sh "docker buildx build --provenance=false --no-cache --pull -t ${DOCKER_IMAGE}:${env.BUILD_ID} ./messaging_app"
+        sh "docker tag ${DOCKER_IMAGE}:${env.BUILD_ID} ${DOCKER_IMAGE}:latest"
+    }
+}
 
         stage('Push Docker Image') {
             steps {
