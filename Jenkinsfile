@@ -22,7 +22,7 @@ pipeline {
                 python3 -m venv venv
                 . venv/bin/activate
                 pip install --upgrade pip
-                pip install -r messaging_app/requirements.txt
+                pip install -r requirements.txt
                 pip install pytest pytest-django
                 '''
             }
@@ -33,8 +33,8 @@ pipeline {
                 sh '''
                 . venv/bin/activate
                 mkdir -p reports
-                export DJANGO_SETTINGS_MODULE=messaging_app.settings
-                python3 -m pytest messaging_app/ \
+                export DJANGO_SETTINGS_MODULE=settings
+                python3 -m pytest \
                     -o "python_files=test_*.py *_test.py tests.py" \
                     --junitxml=reports/test-results.xml
                 '''
@@ -48,7 +48,7 @@ pipeline {
                   --pull \
                   -t ${DOCKER_IMAGE}:${BUILD_ID} \
                   -t ${DOCKER_IMAGE}:latest \
-                  messaging_app
+                  .
                 '''
             }
         }
