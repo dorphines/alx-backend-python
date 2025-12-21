@@ -42,9 +42,11 @@ pipeline {
         }
 
         stage('Build Docker Image') {
+            environment {
+                DOCKER_BUILDKIT = '0'
+            }
             steps {
                 // Force legacy builder to avoid potential registry 400 errors with buildx/provenance
-                env.DOCKER_BUILDKIT = '0'
                 sh "docker build --no-cache --pull -t ${DOCKER_IMAGE}:${env.BUILD_ID} ./messaging_app"
                 sh "docker tag ${DOCKER_IMAGE}:${env.BUILD_ID} ${DOCKER_IMAGE}:latest"
             }
