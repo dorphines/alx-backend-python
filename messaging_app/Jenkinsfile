@@ -42,30 +42,39 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-    steps {
-        withEnv(['DOCKER_BUILDKIT=0']) {
-            sh "docker build --pull -t ${DOCKER_IMAGE}:${env.BUILD_ID} ./messaging_app"
-            sh "docker tag ${DOCKER_IMAGE}:${env.BUILD_ID} ${DOCKER_IMAGE}:latest"
+            steps {
+                sh '''
+                docker build \
+                  --pull \
+                  -t ${DOCKER_IMAGE}:${BUILD_ID} \
+                  -t ${DOCKER_IMAGE}:latest \
+                  messaging_app
+                '''
+            }
         }
-    }
-}
 
-stage('Push Docker Image') {
-    steps {
-        withCredentials([usernamePassword(
-            credentialsId: "${DOCKER_HUB_CREDS_ID}",
-            passwordVariable: 'DOCKER_HUB_PASSWORD',
-            usernameVariable: 'DOCKER_HUB_USER'
-        )]) {
-            sh "docker logout || true"
-            sh "echo \$DOCKER_HUB_PASSWORD | docker login -u \$DOCKER_HUB_USER --password-stdin"
-            sh "docker push ${DOCKER_IMAGE}:${env.BUILD_ID}"
-            sleep 5
-            sh "docker push ${DOCKER_IMAGE}:latest"
+        stage('Push Docker Image') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: "${DOCKER_HUB_CREDS_ID}",
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
+                    sh '''
+                    docker logout || true
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+
+                    for i in 1 2 3; do
+                        docker push ${DOCKER_IMAGE}:${BUILD_ID} && break
+                        echo "Retrying push... attempt $i"
+                        sleep 10
+                    done
+
+                    docker push ${DOCKER_IMAGE}:latest
+                    '''
+                }
+            }
         }
-    }
-}
-
     }
 
     post {
