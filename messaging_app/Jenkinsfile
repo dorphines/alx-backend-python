@@ -42,27 +42,30 @@ pipeline {
         }
 
         stage('Build Docker Image') {
-            environment {
-                DOCKER_BUILDKIT = '0'
-            }
-            steps {
-                // Force legacy builder to avoid potential registry 400 errors with buildx/provenance
-                sh "docker build --no-cache --pull -t ${DOCKER_IMAGE}:${env.BUILD_ID} ./messaging_app"
-                sh "docker tag ${DOCKER_IMAGE}:${env.BUILD_ID} ${DOCKER_IMAGE}:latest"
-            }
+    steps {
+        withEnv(['DOCKER_BUILDKIT=0']) {
+            sh "docker build --pull -t ${DOCKER_IMAGE}:${env.BUILD_ID} ./messaging_app"
+            sh "docker tag ${DOCKER_IMAGE}:${env.BUILD_ID} ${DOCKER_IMAGE}:latest"
         }
+    }
+}
 
-        stage('Push Docker Image') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: "${DOCKER_HUB_CREDS_ID}", passwordVariable: 'DOCKER_HUB_PASSWORD', usernameVariable: 'DOCKER_HUB_USER')]) {
-                    // We logout first to clear any stale sessions on the socket
-                    sh "docker logout"
-                    sh "echo \$DOCKER_HUB_PASSWORD | docker login -u \$DOCKER_HUB_USER --password-stdin"
-                    sh "docker push ${DOCKER_IMAGE}:${env.BUILD_ID}"
-                    sh "docker push ${DOCKER_IMAGE}:latest"
-                }
-            }
+stage('Push Docker Image') {
+    steps {
+        withCredentials([usernamePassword(
+            credentialsId: "${DOCKER_HUB_CREDS_ID}",
+            passwordVariable: 'DOCKER_HUB_PASSWORD',
+            usernameVariable: 'DOCKER_HUB_USER'
+        )]) {
+            sh "docker logout || true"
+            sh "echo \$DOCKER_HUB_PASSWORD | docker login -u \$DOCKER_HUB_USER --password-stdin"
+            sh "docker push ${DOCKER_IMAGE}:${env.BUILD_ID}"
+            sleep 5
+            sh "docker push ${DOCKER_IMAGE}:latest"
         }
+    }
+}
+
     }
 
     post {
